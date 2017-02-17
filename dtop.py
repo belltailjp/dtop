@@ -64,8 +64,9 @@ if __name__ == '__main__':
     for host in args.hosts:
         with connect_ssh(config, host, args.user) as client:
             usage = analyze_status(client)
-            print("{}: CPU{}%".format(host, usage['cpu_usage']))
+            msg = "{}: CPU{:3d}%".format(host, usage['cpu_usage'])
             if usage['gpu_usage']:
                 for i, gpu_usage in enumerate(usage['gpu_usage']):
-                    print("  GPU{}: {}% (VRAM {}%)".format(i, gpu_usage['gpu'], gpu_usage['vram']))
+                    msg += " - GPU{}:{:3d}%, VRAM{:3d}%".format(i, gpu_usage['gpu'], gpu_usage['vram'])
+            print(msg)
 
