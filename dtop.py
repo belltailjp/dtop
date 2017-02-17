@@ -29,7 +29,14 @@ def get_cpu_usage(client):
     value_line = stdout.readlines()[2]
     values = value_line.split()
     cpu_usage = 100 - int(values[14])
-    return cpu_usage
+
+    _, stdout, _ = client.exec_command('free')
+    free_result = stdout.readlines()
+    mem_total = int(free_result[1].split()[1])
+    mem_used  = int(free_result[2].split()[2])
+    mem_usage = 100 * mem_used // mem_total
+
+    return {'%cpu': cpu_usage, '%memory': mem_usage}
 
 def get_gpu_usage(client):
     _, stdout, _ = client.exec_command('nvidia-smi -q -x')
@@ -68,14 +75,15 @@ if __name__ == '__main__':
     for host in args.hosts:
         with connect_ssh(config, host, args.user) as client:
             usage = analyze_status(client)
-            msg = "{}: CPU{:3d}%".format(host, usage['cpu_usage'])
+            cpu_usage = usage['cpu_usage']
+            msg = "{}: CPU{:3d}%, RAM{:3d}%".format(host, cpu_usage['%cpu'], cpu_usage['%memory'])
             if usage['gpu_usage']:
                 n_used_gpu = 0
                 n_total_gpu = len(usage['gpu_usage'])
                 for i, gpu_usage in enumerate(usage['gpu_usage']):
                     if gpu_usage['n_processes'] != 0:
                         n_used_gpu += 1
-                    msg += " - GPU{}:{:3d}%, VRAM{:3d}%".format(i, gpu_usage['gpu'], gpu_usage['vram'])
+                    msg += " / GPU{}:{:3d}%, VRAM{:3d}%".format(i, gpu_usage['gpu'], gpu_usage['vram'])
                 msg += " ({}/{} GPU used)".format(n_used_gpu, n_total_gpu)
             print(msg)
 
