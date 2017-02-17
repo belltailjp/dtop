@@ -43,7 +43,11 @@ def get_gpu_usage(client):
         utilization = gpu.find('utilization')
         gpu_util = int(utilization.find('gpu_util').text.replace('%', ''))
         vram_util = int(utilization.find('memory_util').text.replace('%', ''))
-        result.append({'gpu': gpu_util, 'vram': vram_util})
+
+        processes = gpu.find('processes')
+        n_processes = len(processes.findall('process_info'))
+
+        result.append({'gpu': gpu_util, 'vram': vram_util, 'n_processes': n_processes})
     return result
 
 def analyze_status(client):
@@ -66,7 +70,12 @@ if __name__ == '__main__':
             usage = analyze_status(client)
             msg = "{}: CPU{:3d}%".format(host, usage['cpu_usage'])
             if usage['gpu_usage']:
+                n_used_gpu = 0
+                n_total_gpu = len(usage['gpu_usage'])
                 for i, gpu_usage in enumerate(usage['gpu_usage']):
+                    if gpu_usage['n_processes'] != 0:
+                        n_used_gpu += 1
                     msg += " - GPU{}:{:3d}%, VRAM{:3d}%".format(i, gpu_usage['gpu'], gpu_usage['vram'])
+                msg += " ({}/{} GPU used)".format(n_used_gpu, n_total_gpu)
             print(msg)
 
