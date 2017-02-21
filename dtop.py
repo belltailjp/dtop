@@ -21,6 +21,7 @@ def connect_ssh(config, hostname, username):
     for k in ('hostname', 'username', 'port'):
         if k in user_config:
             cfg[k] = user_config[k]
+    #cfg['sock'] = user_config.get('proxycommand')
     client.connect(**cfg)
     return client
 
@@ -49,7 +50,11 @@ def get_gpu_usage(client):
     for gpu in xml.iter('gpu'):
         utilization = gpu.find('utilization')
         gpu_util = int(utilization.find('gpu_util').text.replace('%', ''))
-        vram_util = int(utilization.find('memory_util').text.replace('%', ''))
+
+        fb_memory_usage = gpu.find('fb_memory_usage')
+        total_memory = int(fb_memory_usage.find('total').text.replace('MiB', ''))
+        used_memory = int(fb_memory_usage.find('used').text.replace('MiB', ''))
+        vram_util = 100 * used_memory // total_memory
 
         processes = gpu.find('processes')
         n_processes = len(processes.findall('process_info'))
