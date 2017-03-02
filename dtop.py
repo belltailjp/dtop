@@ -21,7 +21,8 @@ def connect_ssh(config, hostname, username):
     for k in ('hostname', 'username', 'port'):
         if k in user_config:
             cfg[k] = user_config[k]
-    #cfg['sock'] = user_config.get('proxycommand')
+    if 'proxycommand' in user_config:
+        cfg['sock'] = paramiko.ProxyCommand(user_config['proxycommand'])
     client.connect(**cfg)
     return client
 
